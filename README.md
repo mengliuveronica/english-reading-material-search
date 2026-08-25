@@ -15,7 +15,7 @@ A reusable agent skill for finding, verifying, screening, and packaging complete
 npx skills add mengliuveronica/english-reading-material-search --skill english-reading-material-search
 ```
 
-While the repository is private, installation requires GitHub access to the repository. After a future public release, the same repository can be indexed by [skills.sh](https://skills.sh/).
+The repository is public and can be installed directly with the command above. It is structured for discovery and installation through the open [skills.sh](https://skills.sh/) ecosystem.
 
 ## Runtime requirements
 
