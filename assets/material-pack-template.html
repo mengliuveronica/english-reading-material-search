@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>$PAGE_TITLE</title>
+  <style>
+    :root { --paper: #ffffff; --ink: #111111; --muted: #666666; --line: #d9d9d9; --accent: #e43d21; font-family: system-ui, Arial, sans-serif; color: var(--ink); background: var(--paper); }
+    * { box-sizing: border-box; }
+    html { background: var(--paper); scroll-behavior: smooth; }
+    body { min-width: 320px; min-height: 100vh; margin: 0; background: var(--paper); color: var(--ink); font-family: inherit; font-size: 16px; }
+    a { color: var(--accent); text-underline-offset: 3px; }
+    button, summary { font: inherit; }
+    button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    [hidden] { display: none !important; }
+    .shell { min-height: 100vh; }
+    .rail { position: fixed; z-index: 20; inset: 0 auto 0 0; width: 72px; border-right: 1px solid var(--ink); background: var(--paper); }
+    .rail ol { display: flex; flex-direction: column; align-items: center; margin: 0; padding: 38px 0; list-style: none; }
+    .rail li { width: 100%; }
+    .rail button { width: 100%; height: 58px; padding: 0; border: 0; border-left: 3px solid transparent; background: transparent; color: var(--muted); font-size: 13px; font-weight: 700; letter-spacing: .04em; cursor: pointer; }
+    .rail button[aria-selected="true"] { border-left-color: var(--accent); color: var(--accent); }
+    .pack-main { min-width: 0; margin-left: 72px; }
+    .pack-head { border-bottom: 1px solid var(--ink); background: var(--paper); }
+    .pack-head__inner { display: flex; align-items: center; gap: 22px; width: min(1120px, 100%); min-height: 46px; margin: 0 auto; padding: 7px 56px; }
+    .pack-title { flex: 1 1 260px; margin: 0; font-size: 14px; font-weight: 720; line-height: 1.35; }
+    .pack-facts { display: flex; flex: 0 1 auto; align-items: center; justify-content: flex-end; gap: 7px 17px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .pack-facts div { display: flex; gap: 5px; white-space: nowrap; }
+    .pack-facts dt { color: var(--ink); font-weight: 680; }
+    .pack-facts dd { margin: 0; }
+    .notice-wrap { width: min(1120px, 100%); margin: 20px auto -12px; padding: 0 56px; }
+    .fixture-notice { margin: 0; padding: 10px 0 10px 13px; border-left: 3px solid var(--accent); color: var(--muted); font-size: 13px; font-weight: 620; line-height: 1.55; }
+    .material { width: min(1120px, 100%); margin: 0 auto; padding: 50px 56px 92px; scroll-margin-top: 0; }
+    .article-head h1 { max-width: 920px; margin: 0; font-size: clamp(48px, 5vw, 56px); font-weight: 700; line-height: 1.04; letter-spacing: -.045em; text-wrap: balance; }
+    .source-line { margin: 17px 0 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .source-line a { margin-left: 7px; font-weight: 680; }
+    .article-actions { display: flex; align-items: center; gap: 12px; margin-top: 20px; }
+    .copy-reading { min-height: 38px; padding: 8px 15px; border: 1px solid var(--ink); background: var(--accent); color: #ffffff; font-size: 13px; font-weight: 720; cursor: pointer; }
+    .copy-reading:hover { background: var(--ink); }
+    .copy-status { color: var(--muted); font-size: 12px; }
+    .coverage-metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 38px 0 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+    .coverage-metrics > div { min-width: 0; padding: 16px 17px 17px; border-right: 1px solid var(--line); }
+    .coverage-metrics > div:first-child { padding-left: 0; }
+    .coverage-metrics > div:last-child { padding-right: 0; border-right: 0; }
+    .coverage-metrics dt { margin: 0 0 7px; color: var(--muted); font-size: 14px; line-height: 1.3; }
+    .coverage-metrics dd { margin: 0; font-size: 25px; font-weight: 700; line-height: 1.08; letter-spacing: -.025em; }
+    .coverage-metrics dd span { display: block; margin-top: 6px; color: var(--muted); font-size: 12px; font-weight: 560; letter-spacing: 0; }
+    .coverage-status { margin: 38px 0 0; padding: 15px 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); color: var(--muted); font-size: 14px; }
+    .original-content { max-width: 72ch; margin-top: 40px; }
+    .original-content p, .original-content li { font-size: 18px; line-height: 1.7; letter-spacing: -.005em; }
+    .original-content p { margin: 0 0 19px; }
+    .original-content ul { margin: 0 0 19px; padding-left: 24px; }
+    .original-content li { margin: 0 0 8px; }
+    .original-content h2 { margin: 34px 0 14px; font-size: 24px; line-height: 1.25; }
+    .original-subtitle { color: var(--muted); font-style: italic; }
+    .more { max-width: 82ch; margin-top: 38px; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+    .more summary { position: relative; padding: 16px 42px 16px 0; font-size: 15px; font-weight: 700; cursor: pointer; list-style: none; }
+    .more summary::-webkit-details-marker { display: none; }
+    .more summary::after { position: absolute; top: 50%; right: 2px; content: "+"; color: var(--accent); font-size: 23px; font-weight: 400; line-height: 1; transform: translateY(-52%); }
+    .more[open] summary::after { content: "−"; }
+    .more-content { padding: 4px 0 30px; }
+    .info-section { padding: 25px 0; border-top: 1px solid var(--line); }
+    .info-section:first-child { border-top: 0; }
+    .info-section h2 { margin: 0 0 13px; font-size: 15px; line-height: 1.4; }
+    .info-section p, .info-section li, .info-list { font-size: 13px; line-height: 1.65; }
+    .info-section p { margin: 0 0 10px; }
+    .info-section p:last-child { margin-bottom: 0; }
+    .info-list { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 8px 15px; margin: 0; }
+    .info-list dt { color: var(--muted); }
+    .info-list dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+    .plain-list { margin: 0; padding-left: 19px; }
+    .plain-list li { margin-bottom: 7px; }
+    .basis { color: var(--muted); font-weight: 680; }
+    .teacher-decision { padding-left: 12px; border-left: 3px solid var(--accent); }
+    .screen-reader-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (max-width: 760px) {
+      .rail { position: sticky; top: 0; width: 100%; height: 53px; border-right: 0; border-bottom: 1px solid var(--ink); }
+      .rail ol { flex-direction: row; align-items: stretch; height: 52px; padding: 0 12px; overflow-x: auto; }
+      .rail li { width: auto; }
+      .rail button { width: 60px; height: 52px; font-size: 12px; }
+      .pack-main { margin-left: 0; }
+      .pack-head__inner { display: block; padding: 8px 22px 9px; }
+      .pack-title { font-size: 13px; }
+      .pack-facts { justify-content: flex-start; margin-top: 5px; overflow-x: auto; }
+      .notice-wrap { margin-top: 18px; padding: 0 22px; }
+      .material { padding: 38px 22px 72px; scroll-margin-top: 53px; }
+      .article-head h1 { font-size: 48px; }
+      .coverage-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .coverage-metrics > div, .coverage-metrics > div:first-child, .coverage-metrics > div:last-child { padding: 14px 10px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+      .coverage-metrics > div:nth-child(2n) { border-right: 0; }
+      .coverage-metrics > div:last-child { grid-column: 1 / -1; border-right: 0; border-bottom: 0; }
+      .info-list { grid-template-columns: 1fr; gap: 2px; }
+      .info-list dd { margin-bottom: 8px; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    @media print {
+      @page { margin: 16mm; }
+      body { color: #000000; background: #ffffff; font-size: 12px; }
+      .rail, .article-actions { display: none !important; }
+      .pack-main { margin-left: 0; }
+      .pack-head__inner, .material { width: 100%; padding-right: 0; padding-left: 0; }
+      .notice-wrap { width: 100%; margin-bottom: 0; padding: 0; }
+      .material, .material[hidden] { display: block !important; padding-top: 30px; padding-bottom: 0; }
+      .material + .material { break-before: page; }
+      .source-line a::after { content: " (" attr(href) ")"; color: #000000; font-weight: 400; }
+      .coverage-metrics, .article-head, .info-section { break-inside: avoid; }
+      .original-content { max-width: none; }
+      .original-content p { orphans: 3; widows: 3; }
+      .more summary { cursor: default; }
+      .more summary::after { display: none; }
+      .more:not([open]) > .more-content, .more-content { display: block !important; }
+      a { color: #000000; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    $NAVIGATION
+    <main class="pack-main" id="pack-content">
+      $HEADER
+      $MATERIALS
+    </main>
+  </div>
+  <noscript><style>.material[hidden] { display: block !important; }</style><p class="screen-reader-only">脚本未启用，现已显示全部材料。</p></noscript>
+  <script>
+    (() => {
+      const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+      const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
+      const details = Array.from(document.querySelectorAll('.more'));
+      const copyButtons = Array.from(document.querySelectorAll('.copy-reading'));
+      const tablist = document.querySelector('[role="tablist"]');
+      const mobile = window.matchMedia('(max-width: 760px)');
+      const syncOrientation = () => tablist.setAttribute('aria-orientation', mobile.matches ? 'horizontal' : 'vertical');
+      syncOrientation();
+      mobile.addEventListener('change', syncOrientation);
+      const activate = (index, focusTab, scrollPanel) => {
+        tabs.forEach((tab, itemIndex) => {
+          const active = itemIndex === index;
+          tab.setAttribute('aria-selected', String(active));
+          tab.tabIndex = active ? 0 : -1;
+          if (active) tab.setAttribute('aria-current', 'page');
+          else tab.removeAttribute('aria-current');
+          panels[itemIndex].hidden = !active;
+        });
+        if (scrollPanel) panels[index].scrollIntoView({ block: 'start' });
+        if (focusTab) tabs[index].focus();
+      };
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => activate(index, false, true));
+        tab.addEventListener('keydown', (event) => {
+          let next = null;
+          if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+          if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+          if (event.key === 'Home') next = 0;
+          if (event.key === 'End') next = tabs.length - 1;
+          if (next !== null) {
+            event.preventDefault();
+            activate(next, true, true);
+          }
+        });
+      });
+      const fallbackCopy = (text) => {
+        const field = document.createElement('textarea');
+        field.value = text;
+        field.setAttribute('readonly', '');
+        field.style.cssText = 'position:fixed;left:-9999px;top:0';
+        document.body.appendChild(field);
+        field.select();
+        const copied = document.execCommand('copy');
+        field.remove();
+        if (!copied) throw new Error('copy command failed');
+      };
+      const copyText = async (text) => {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return;
+          } catch (_error) {}
+        }
+        fallbackCopy(text);
+      };
+      copyButtons.forEach((button) => {
+        button.addEventListener('click', async () => {
+          const source = document.getElementById(button.dataset.copyTarget);
+          const status = button.parentElement.querySelector('.copy-status');
+          try {
+            await copyText(source.textContent);
+            button.textContent = '已复制';
+            status.textContent = '完整原文已复制到剪贴板';
+            window.setTimeout(() => { button.textContent = '复制原文'; status.textContent = ''; }, 1800);
+          } catch (_error) {
+            status.textContent = '复制失败，请手动选择原文';
+          }
+        });
+      });
+      let printState = [];
+      window.addEventListener('beforeprint', () => {
+        printState = details.map((item) => item.open);
+        details.forEach((item) => { item.open = true; });
+      });
+      window.addEventListener('afterprint', () => {
+        details.forEach((item, index) => { item.open = printState[index]; });
+      });
+    })();
+  </script>
+</body>
+</html>

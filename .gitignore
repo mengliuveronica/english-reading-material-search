@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+node_modules/
+.DS_Store
+.env
+.env.*
+/delivery/
+/reading-texts/
+/work/
+/material-pack.html
+/material-analysis.docx
+/material-pack.json
+/material-pack.covered.json
+*.tmp

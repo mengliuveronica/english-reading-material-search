@@ -1,0 +1,12 @@
+{
+  "name": "english-reading-material-search",
+  "version": "1.4.1",
+  "description": "Verified English reading material search and teacher-ready delivery for Chinese high schools",
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true,
+  "dependencies": {
+    "docx": "9.7.1"
+  }
+}
