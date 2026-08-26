@@ -1,6 +1,6 @@
 {
   "name": "english-reading-material-search",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Verified English reading material search and teacher-ready delivery for Chinese high schools",
   "engines": {
     "node": ">=18"

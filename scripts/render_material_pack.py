@@ -80,7 +80,7 @@ def render_blocks(blocks: list[dict[str, str]]) -> str:
         output.append("</ul>")
     return "".join(output)
 def coverage_message(coverage: dict[str, Any] | None) -> str:
-    return {"unavailable": "本次未完成覆盖分析", "not_requested": "本次未请求覆盖分析"}.get(coverage["status"], "") if coverage else ""
+    return {"unavailable": "课标词汇覆盖尚未完成；来源核验和教学分析可正常使用", "not_requested": "本次未安排课标词汇覆盖分析"}.get(coverage["status"], "") if coverage else ""
 
 def render_coverage_metrics(material: dict[str, Any]) -> str:
     coverage = material.get("curriculum_vocabulary_coverage")
@@ -112,7 +112,7 @@ def render_coverage_details(material: dict[str, Any]) -> str:
     if not coverage:
         return ""
     if coverage["status"] != "analyzed":
-        return f'<section class="info-section coverage-detail"><h2>课标词汇重点</h2><p>{e(coverage_message(coverage))}</p></section>'
+        return ""
     summary, focus = coverage["summary"], coverage["focus_vocabulary"]
     rows = [("词项覆盖", f'{summary["type_coverage_rate"]:.1%} · {summary["covered_types"]}/{summary["total_types"]}')]
     rows.extend((label, "、".join(e(word) for word in focus[key]) or "—") for label, key in

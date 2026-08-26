@@ -1,14 +1,15 @@
 # English Reading Material Pack 输出合同
 
-## 1. 正常交付
+## 1. 交付模式
 
 教师交付目录固定包含三类产物，不含JSON：
 
 - **展示页**：`material-pack.html`。它必须由已校验内部JSON经固定Python渲染器生成，可离线打开；每篇提供“复制原文”，不得让模型自由手写或直接修补最终HTML。
-- **分析报告**：`material-analysis.docx`。它集中呈现来源、教学适配、词汇覆盖、入选理由、风险、不确定性、教师决定及检索记录，不重复收录英文原文正文。
+- **分析报告**：`material-analysis.docx`。它集中呈现来源、教学适配、词汇覆盖状态、入选理由、风险、不确定性、教师决定及检索记录，不重复收录英文原文正文。
 - **纯文本目录**：`reading-texts/`。每个Material独立生成一个UTF-8 TXT，只含完整未改写 `original_text.blocks[].text`，用于后续程序分析。
 - 正常包含3–5个非重复 `Material`。每个单元都必须有完整未改写 `Original text` 和已实际核验的HTTP(S)原始URL，不存在 link-only Material。
-- 正常顺序是：检索与完整性核验 → 在交付目录外写1.1中间JSON初稿 → 基础校验 → 必须调用默认自有版本化课标词汇API → 原子生成1.2内部JSON → 最终校验 → 固定渲染器生成HTML、DOCX和逐篇TXT → 只交付HTML+DOCX+TXT。任一阶段失败都会阻断生产交付。
+- **完整交付**：1.1中间JSON通过基础校验后调用兼容词汇服务；3–5篇全部分析成功后原子生成schema 1.2，再渲染HTML、DOCX和逐篇TXT。
+- **基础交付**：词汇服务不可用且用户明确同意后，使用 `prepare_basic_delivery.py` 从原始schema 1.1工作文件生成新的schema 1.1基础包。每篇覆盖状态统一为 `unavailable`，教师产物明确显示词汇覆盖尚未完成；来源、原文和教学分析照常交付。
 - 不能确认完整正文的页面只能进入 `discard_log`。不足3篇时报告缺口，不以不完整、合成或低质来源凑包。
 
 ## 2. 内部 JSON 顶层合同
@@ -40,7 +41,7 @@ JSON必须是UTF-8对象，字段名固定且不得添加注释；它是三个�
 
 约束：
 
-- `schema_version` 当前内部生产版本为 `1.2`。`pack_type: production` 的1.2包要求每篇都存在 `curriculum_vocabulary_coverage` 且 `status: analyzed`；字段缺失、`not_requested` 或 `unavailable` 均校验失败。校验器仍可读取/校验旧1.0/1.1包及其可选覆盖状态，用于兼容而非当前生产流程。覆盖前可暂用1.1作为不可交付的基础校验中间包；adapter全部成功后升级为1.2。
+- 完整包使用 `schema_version: "1.2"`，并要求每篇 `curriculum_vocabulary_coverage.status` 都是 `analyzed`。基础包保留 `schema_version: "1.1"`，要求每篇都显式使用 `status: unavailable`；它只能由固定脚本在服务失败且用户同意后生成。1.0包和缺少显式覆盖状态的旧1.1包只用于兼容读取。
 - 真实交付只能使用 `pack_type: production`。`synthetic_fixture` 仅供本地UI/校验测试，并必须有醒目的 `fixture_notice`。
 - `material_count` 为整数，必须与 `materials` 实际长度一致，且范围为3–5。
 - `generated_date` 使用 `YYYY-MM-DD`。
@@ -108,9 +109,9 @@ JSON必须是UTF-8对象，字段名固定且不得添加注释；它是三个�
 - `teacher_decision` 专门保留教师对题型、删改、注释、敏感性和印刷/分发的最终取舍。
 - `id` 使用 `M1`、`M2`……且唯一；原始URL也必须在包内唯一，防止重复收录同文。
 
-## 4. 强制课标词汇覆盖合同
+## 4. 课标词汇覆盖合同
 
-当前生产schema 1.2的每个Material都必须且只能有一个 `curriculum_vocabulary_coverage`，并且status必须为 `analyzed`。它是默认自有版本化课标索引API的真实、经合同验证的紧凑结果，不是CEFR、阅读等级或绝对难度判断。`analyzed` 形状固定为：
+完整schema 1.2包的每个Material都必须且只能有一个 `curriculum_vocabulary_coverage`，并且status必须为 `analyzed`。它是兼容课标索引API返回的真实、经合同验证的紧凑结果，不是CEFR、阅读等级或绝对难度判断。基础schema 1.1包统一使用 `status: unavailable`，不含任何估算统计。`analyzed` 形状固定为：
 
 ```jsonc
 "curriculum_vocabulary_coverage": {
@@ -148,8 +149,8 @@ JSON必须是UTF-8对象，字段名固定且不得添加注释；它是三个�
 
 - `total_tokens` / `total_types` 对应canonical denominator，`covered_tokens` / `covered_types` 对应matched；excluded词不写入紧凑统计。coverage rate均为0–1；covered不得超过total；type总数不得超过token总数。四个level count按token计，和为 `total_tokens`；`foundation`、`high_school_required`、`high_school_selective` 三项之和为 `covered_tokens`；各rate必须与对应分数一致（允许四位小数舍入）。这里的后两层分别表示“高中必修新增”和“选择性必修新增”，不包含基础层，避免把累计覆盖误当层级新增。
 - `focus_vocabulary` 只含 `high_school_required`、`high_school_selective`、`not_directly_listed` 三个数组；基础词不逐项铺开。每组最多100个非空、去重、至多80字符的展示字符串。Material Pack只保存这些紧凑列表，不保存API返回的 `tokens`、完整token审计、逐token命中记录或其他大字段。
-- 旧1.0/1.1包可省略整个字段，或显式使用 `status: not_requested|unavailable`；synthetic fixture也可按测试目的使用这些明确状态。非 `analyzed` 状态的 `engine_version`、`index_hash`、`analyzed_at`、`summary`、`focus_vocabulary` 必须存在且为 `null`。这些兼容状态不能出现在生产1.2包，adapter也不会生成它们。
-- `analyzed` 的版本、索引hash、时间和统计都来自API响应并逐篇经过校验；执行者或模型不得自行推断、补写、把语言负荷判断转换为覆盖率或在失败时静默降级。
+- 非 `analyzed` 状态的 `engine_version`、`index_hash`、`analyzed_at`、`summary`、`focus_vocabulary` 必须存在且为 `null`。基础包的3–5篇必须全部使用 `unavailable`，不能与 `analyzed`、`not_requested` 或字段缺失混用。API adapter不会生成 `unavailable`；只有 `prepare_basic_delivery.py` 可以在用户授权后写入。
+- `analyzed` 的版本、索引hash、时间和统计都来自API响应并逐篇经过校验；执行者或模型不得自行推断、补写或把语言负荷判断转换为覆盖率。
 
 ## 5. Original text 合同
 
@@ -192,7 +193,7 @@ JSON必须是UTF-8对象，字段名固定且不得添加注释；它是三个�
 
 ## 8. API adapter 与固定分层渲染合同
 
-覆盖分析是生产流程强制步骤，只能在完整正文已写入、1.1中间JSON初稿通过基础校验后执行。adapter无第三方依赖，对3–5篇材料按 `original_text.blocks` 原顺序以两个换行拼接全部 `text`，标题取 `source_metadata.title`，向默认自有HTTP(S)端点逐篇独立POST且只发送：
+完整交付默认包含覆盖分析。外部检索前先运行 `python3 scripts/check_vocabulary_service.py`；预检使用内置短文本，不发送教师材料。完整正文写入且1.1中间JSON通过基础校验后，adapter对3–5篇材料按 `original_text.blocks` 原顺序以两个换行拼接全部 `text`，标题取 `source_metadata.title`，向选定HTTP(S)端点逐篇独立POST且只发送：
 
 ```jsonc
 {"text":"complete ordered English text","title":"Exact original title","mode":"compact"}
@@ -203,6 +204,7 @@ API响应envelope必须在根对象提供 `schema_version: "1.0"`、`mode: "comp
 API的canonical focus必须恰含三个数组：高中层级使用 `{headword, forms, ...}`，未直接收录使用 `{surface, count}`。adapter逐项校验后压成去重且不超过80字符的展示字符串，只保留后三类focus，不展开foundation。adapter会限制响应大小、设置逐请求timeout，并逐篇校验schema、engine version、SHA-256 index hash、canonical summary、focus及统计一致性；根 `tokens` 仅用于确认compact envelope且不会写入Material Pack。服务仅为本次请求分析正文，不保存正文；Material Pack也不保存根 `tokens` 或完整token审计。
 
 ```bash
+python3 scripts/check_vocabulary_service.py
 python3 scripts/validate_material_pack_json.py path/to/work/material-pack.json
 python3 scripts/add_vocabulary_coverage.py path/to/work/material-pack.json \
   --output path/to/work/material-pack.covered.json
@@ -212,10 +214,20 @@ node scripts/render_material_analysis.js path/to/work/material-pack.covered.json
 python3 scripts/render_reading_texts.py path/to/work/material-pack.covered.json path/to/delivery/reading-texts
 ```
 
-- adapter默认调用稳定自有入口 `https://vocabprofiler.netlify.app/api/analyze`，正常命令无需填写URL；入口代理底层分析服务，因此Skill不绑定或暴露供应商项目地址。`VOCAB_PROFILE_API_URL` 可覆盖默认地址，显式 `--api-url` 的优先级最高；地址只接受无用户信息的 `http://` / `https://` URL。
+服务不可用且用户确认基础交付时运行：
+
+```bash
+python3 scripts/prepare_basic_delivery.py path/to/work/material-pack.json \
+  --output path/to/work/material-pack.basic.json
+```
+
+随后用 `material-pack.basic.json` 运行同一验证器和三个渲染器。
+
+- adapter默认调用稳定自有入口 `https://vocabprofiler.netlify.app/api/analyze`，正常命令无需填写URL；`VOCAB_PROFILE_API_URL` 可覆盖默认地址，显式 `--api-url` 的优先级最高；地址只接受无用户信息的 `http://` / `https://` URL。
 - 保留 `--timeout`、`--max-response-bytes`、可重复的 `--header NAME=VALUE`；如服务需要凭据，用 `--api-key-env ENV_NAME` 和可选 `--api-key-header` 从环境变量取完整header值，不把secret写入脚本、JSON或文档。
-- 任一材料发生网络、timeout、HTTP、响应过大、JSON或合同错误时整体退出非零，既不改输入，也不覆盖已存在的输出。生产流程没有 `--allow-unavailable`，不得生成 `unavailable`、自行估计覆盖率或静默降级；失败必须阻断最终交付。
-- 只有3–5篇全部得到经验证的独立指标后，才设置schema 1.2、执行最终合同校验，并使用输出目录内临时文件原子替换目标。`--output` 可以等于输入，但独立输出更便于审阅。
+- 任一材料发生网络、timeout、HTTP、响应过大、JSON或合同错误时，adapter整体退出非零，既不改输入，也不覆盖已存在的输出。adapter没有 `--allow-unavailable`，也不会估算覆盖率。失败会阻断完整交付，并把是否生成基础包交给用户决定。
+- 只有3–5篇全部得到经验证的独立指标后，adapter才设置schema 1.2、执行最终合同校验，并使用输出目录内临时文件原子替换目标。`--output` 可以等于输入，但独立输出更便于审阅。
+- `prepare_basic_delivery.py` 只接受production schema 1.1，要求新输出路径，并拒绝替换任何已有 `analyzed` 结果。它原子写出每篇均为 `unavailable` 的基础包，不修改原始工作文件。
 
 HTML渲染器会再次执行同一验证，失败时不输出新HTML。固定模板为 `assets/material-pack-template.html`。生成页面必须：
 
@@ -225,7 +237,7 @@ HTML渲染器会再次执行同一验证，失败时不输出新HTML。固定模
 - 编号控件按真实3–5篇动态生成，当前项使用朱红竖线和数字；点击或使用方向键、Home、End只显示对应文章，并正确维护tab/panel的ARIA状态与键盘焦点；
 - 每篇使用独立语义化 `<article>`；当前篇标题为48–56px，来源、作者、日期、词数和经验证的原始网页链接同列展示；标题区另提供清晰的“复制原文”按钮和 `aria-live` 状态反馈；
 - 复制内容必须由该Material全部 `original_text.blocks[].text` 按原顺序以空行连接，含标题、副标题、小标题、段落与列表项，不含URL、metadata、覆盖率、教学分析或界面文案；优先使用Clipboard API，权限或 `file://` 环境失败时回退到本地textarea复制，不发起网络请求；
-- 每篇标题下固定显示课标总覆盖、基础、必修新增、选择性必修新增、未直接收录五项百分比和数量，中文标签不小于13px。旧JSON仍按兼容边界渲染：无字段则无覆盖区，显式非analyzed状态只显示未完成/未请求提示，不伪造指标；
+- 完整包在每篇标题下固定显示课标总覆盖、基础、必修新增、选择性必修新增、未直接收录五项百分比和数量，中文标签不小于13px。基础包在同一位置显示“课标词汇覆盖尚未完成；来源核验和教学分析可正常使用”，不显示或推测任何指标；
 - 完整未改写原文紧接五项指标持续显示，以18px、1.7行高和约72ch行长作为页面主体，不再把原文放入折叠区；
 - 每篇只保留一个默认折叠的“更多信息” `<details>`，统一容纳来源详情、教学适配、入选理由、风险、不确定性、教师决定和“课标词汇重点”；词汇部分只显示词项覆盖、必修关注词、选择性必修关注词、未直接收录词及可点击的 `https://vocabprofiler.netlify.app/`，不重复顶部词次与四层指标；
 - `engine_version`、`index_hash`、`analyzed_at` 继续保存在内部JSON并参与合同校验，但不得渲染到HTML或DOCX，也不得用其他引擎ID、hash或时间戳替代展示；
@@ -238,7 +250,7 @@ DOCX分析报告必须由 `scripts/render_material_analysis.js` 生成，并满�
 
 - 文件名固定为 `material-analysis.docx`，面向人阅读，按材料编号组织；
 - 包含Pack概况，以及每篇的来源信息、入选理由、教学适配、课标词汇覆盖、风险、不确定性和教师决定，末尾包含检索与淘汰记录；
-- 每篇词汇覆盖压缩为：课标总覆盖、词项覆盖、一行四层百分比分布、三组关注词及可点击的 `https://vocabprofiler.netlify.app/`；不显示引擎版本、索引hash或分析时间；
+- 完整包每篇词汇覆盖压缩为：课标总覆盖、词项覆盖、一行四层百分比分布、三组关注词及可点击的 `https://vocabprofiler.netlify.app/`；基础包只显示覆盖尚未完成。两种模式都不显示引擎版本、索引hash或分析时间；
 - 不重复收录 `original_text.blocks` 的英文正文；正文只进入HTML与逐篇TXT；
 - 使用标题层级、两列表格、真实项目符号、页边距和页码形成可导航的专业版式；URL使用可点击超链接；
 - 生成前调用同一JSON校验器；失败时不生成可交付DOCX。
@@ -255,7 +267,7 @@ DOCX分析报告必须由 `scripts/render_material_analysis.js` 生成，并满�
 
 ## 9. 验证与边界
 
-- 最终生产检查必须对3–5篇逐篇确认 `status: analyzed`、合法且非空的内部 `engine_version` / `index_hash`、经canonical响应转换的 `summary` 和三个focus数组；同时确认HTML顶部五项指标完整、“更多信息”只含词项覆盖、三组关注词与VocabProfiler链接，DOCX只含精简统计与关注词；内部技术字段不得出现在教师产物。任何一篇不满足都不得交付。
+- 完整包逐篇确认 `status: analyzed`、合法且非空的内部 `engine_version` / `index_hash`、经canonical响应转换的 `summary` 和三个focus数组；同时确认HTML和DOCX显示精简指标。基础包确认schema为1.1、用户已同意、3–5篇状态全部为 `unavailable`，HTML和DOCX均显示覆盖尚未完成。两种模式都不在教师产物中显示内部技术字段。
 - 离线实际点击每篇“复制原文”并粘贴抽查：必须从原始标题开始，覆盖全部原文块，且不含来源、分析或界面文案。
 - 解压或抽取DOCX文本检查所有分析栏目齐全且没有英文原文正文；逐个读取TXT检查文件名、UTF-8编码、顺序、块间空行及纯文本边界，并确认TXT数量等于 `material_count`。
 - 最终列出交付目录内容，确认只有HTML、DOCX和 `reading-texts/*.txt`，没有 `.json`、脚本、模板或测试文件。

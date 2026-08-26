@@ -54,7 +54,7 @@ function bullet(text) {
 }
 
 function coverageChildren(coverage) {
-  if (!coverage || coverage.status !== "analyzed") return [paragraph("本次未完成课标词汇覆盖分析。")];
+  if (!coverage || coverage.status !== "analyzed") return [paragraph("课标词汇覆盖尚未完成；来源核验和教学分析可正常使用。")];
   const summary = coverage.summary;
   const focus = coverage.focus_vocabulary;
   const distribution = LEVELS.map(([label, key]) => `${label} ${(summary.level_rates[key] * 100).toFixed(1)}%`).join("｜");
